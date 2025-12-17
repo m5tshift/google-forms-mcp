@@ -1,112 +1,58 @@
-from fastmcp import FastMCP
-from google_forms_client import GoogleFormsClient
-from typing import Optional, List, Dict, Any
-
-client = GoogleFormsClient()
-mcp = FastMCP(name="google-forms-mcp")
+from mcp_instance import mcp
+import sys
 
 
-@mcp.tool()
-def get_form(form_id: str) -> Dict[str, Any]:
-    """
-    Получить всю форму по её ID — metadata + элементы (questions/items).
+def main():
+    print("🔧 Загружаем инструменты...", file=sys.stderr)
+    try:
+        from tools.list_forms import list_forms
 
-    Args:
-        form_id (str): Идентификатор формы в Google Forms.
+        print("✅ list_forms загружен", file=sys.stderr)
+    except Exception as e:
+        print(f"❌ Ошибка импорта list_forms: {e}", file=sys.stderr)
 
-    Returns:
-        dict: Объект формы, содержащий её информацию, настройки, список вопросов (items) и пр.
-    """
-    return client.get_form(form_id)
+    try:
+        from tools.apply_questions_patch import apply_questions_patch
 
+        print("✅ apply_questions_patch загружен", file=sys.stderr)
+    except Exception as e:
+        print(f"❌ Ошибка импорта apply_questions_patch: {e}", file=sys.stderr)
 
-@mcp.tool()
-def list_forms() -> List[Dict[str, Any]]:
-    """
-    Получить список всех форм пользователя через Google Drive.
+    try:
+        from tools.close_form import close_form
 
-    Возвращает базовую информацию — id, name — для каждой формы, доступной учётной записи.
-    После этого по ID можно вызвать get_form, чтобы получить детали.
+        print("✅ close_form загружен", file=sys.stderr)
+    except Exception as e:
+        print(f"❌ Ошибка импорта close_form: {e}", file=sys.stderr)
 
-    Returns:
-        list of dict: Список форм — каждый dict содержит минимум 'id' и 'name'.
-    """
-    return client.list_forms()
+    try:
+        from tools.get_form import get_form
 
+        print("✅ get_form загружен", file=sys.stderr)
+    except Exception as e:
+        print(f"❌ Ошибка импорта get_form: {e}", file=sys.stderr)
 
-@mcp.tool()
-def upsert_form(
-    form_id: Optional[str], title: str, description: Optional[str] = ""
-) -> Dict[str, Any]:
-    """
-    Создать новую форму или обновить существующую (по form_id).
+    try:
+        from tools.upsert_form import upsert_form
 
-    Если form_id не указан (None) — создаётся новая форма с указанным title (и, при необходимости, description).
-    Если form_id указан — выполняется update: изменяются title и/или description.
+        print("✅ upsert_form загружен", file=sys.stderr)
+    except Exception as e:
+        print(f"❌ Ошибка импорта upsert_form: {e}", file=sys.stderr)
 
-    Args:
-        form_id (str | None): ID формы для обновления, либо None для создания новой.
-        title (str): Заголовок (title) формы.
-        description (str, optional): Описание формы. По умолчанию "".
-
-    Returns:
-        dict: Результат API — информация о форме (или обновлённая metadata).
-    """
-    if form_id:
-        body = {
-            "requests": [
-                {
-                    "updateFormInfo": {
-                        "info": {"title": title, "description": description},
-                        "updateMask": "title,description",
-                    }
-                }
-            ]
-        }
-        return client.batch_update(form_id, [body["requests"][0]])
-    else:
-        return client.create_form(title=title, description=description)
-
-
-@mcp.tool()
-def close_form(form_id: str) -> dict:
-    """
-    Закрыть форму для новых ответов — остановить приём новых submissions.
-
-    После вызова форма останется, её структура сохранится, но новые ответы не будут приниматься.
-
-    Args:
-        form_id (str): Идентификатор формы, которую нужно “закрыть”.
-
-    Returns:
-        dict: Результат API — обновлённые настройки формы (или ошибка, если форма не поддерживает закрытие).
-    """
-    return client.close_form_for_responses(form_id)
-
-
-@mcp.tool()
-def apply_questions_patch(
-    form_id: str, requests: List[Dict[str, Any]]
-) -> Dict[str, Any]:
-    """
-    Применить набор операций (patch) к вопросам/элементам формы через batchUpdate.
-
-    Позволяет:
-      - add / create вопрос / элемент (createItem),
-      - удалять элемент (deleteItem),
-      - перемещать (moveItem),
-      - изменять существующие элементы (updateItem),
-      - любые комбинации одновременно — все операции будут применены в одной транзакции.
-
-    Args:
-        form_id (str): ID формы.
-        requests (List[dict]): Список операций в формате Google Forms API (каждый dict — одна sub-request).
-
-    Returns:
-        dict: Ответ API — может содержать обновлённую форму + детали по каждому запросу (itemId, ошибки, etc).
-    """
-    return client.batch_update(form_id, requests)
+    """Запуск MCP сервера с HTTP транспортом."""
+    print("=" * 60, file=sys.stderr)
+    print("🌐 ЗАПУСК MCP СЕРВЕРА", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    # print(f"🚀 MCP Server: http://{SERVER_HOST}:{SERVER_PORT}/mcp", file=sys.stderr)
+    # print("=" * 60, file=sys.stderr)
+    # mcp.run(
+    #     transport="streamable-http",
+    #     host=SERVER_HOST,
+    #     port=SERVER_PORT,
+    #     stateless_http=True,
+    # )
+    mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")  # или transport="http" + host/port, если нужен HTTP
+    main()

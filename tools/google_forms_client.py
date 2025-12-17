@@ -92,3 +92,6 @@ class GoogleFormsClient:
     ) -> Dict[str, Any]:
         body = {"requests": requests, "includeFormInResponse": include_form_in_response}
         return self.service.forms().batchUpdate(formId=form_id, body=body).execute()
+
+
+client = GoogleFormsClient()

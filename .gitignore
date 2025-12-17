@@ -9,8 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
-# Credentials
+# Google credentials and token
 credentials.json
+token.json
 
 # ruff
 .ruff_cache/
